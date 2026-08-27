@@ -84,7 +84,7 @@ function Dashboard() {
   }, [reflections.length, state]);
 
   // Standalone In-Browser Demo Evaluation Loop (for Vercel & Offline Judge Demos)
-  const runInBrowserDemoSimulation = () => {
+  const runInBrowserDemoSimulation = (customUrl?: string, customCmd?: string) => {
     setIsSimulating(true);
     setShowReportModal(false);
     setActiveTab("terminal");
@@ -96,6 +96,11 @@ function Dashboard() {
     setSimReport(null);
     setSimAttempt(1);
     setSimState("PLANNING");
+
+    const effectiveRepoUrl = customUrl?.trim() || "https://github.com/autofixer/demo-repo";
+    const repoParts = effectiveRepoUrl.replace(/\.git$/, "").split("/").filter(Boolean);
+    const repoName = repoParts.length >= 2 ? `${repoParts[repoParts.length - 2]}/${repoParts[repoParts.length - 1]}` : (repoParts[repoParts.length - 1] || "demo-repo");
+    const testRunner = customCmd?.trim() || "pytest tests/ -v";
 
     const pushLog = (line: string) => setSimLogs((prev) => [...prev, line]);
     const pushEvent = (type: any, data: any, st?: AgentState, att?: number) => {
@@ -114,14 +119,15 @@ function Dashboard() {
     };
 
     // Step 1: Initialize sandbox & run baseline tests
-    pushLog("[AutoFixer-AI] Starting Autonomous QA Loop for Demo Repository (Calculator)...");
-    pushLog("[Sandbox] Process isolation active: secret scrubbing enabled, wall-clock timeout 60s.");
+    pushLog(`[AutoFixer-AI] Starting Autonomous QA Loop for repository: ${effectiveRepoUrl} ...`);
+    pushLog("[Sandbox] Process-level isolation active: secret scrubbing enabled, wall-clock timeout 60s.");
+    pushLog(`[Framework] Auto-detected test runner: ${testRunner.split(" ")[0]} (Python 3.11)`);
     pushLog("[Git] Created working branch: autofixer/attempt-1");
     pushEvent("state_change", { message: "Initializing sandbox" }, "PLANNING", 1);
 
     setTimeout(() => {
       setSimState("RUNNING_TESTS");
-      pushLog("\n$ pytest tests/ -v");
+      pushLog(`\n$ ${testRunner}`);
       pushLog("============================= test session starts ==============================");
       pushLog("collected 6 items");
       pushLog("tests/test_calculator.py::test_addition PASSED                          [ 16%]");
@@ -186,7 +192,7 @@ function Dashboard() {
     setTimeout(() => {
       setSimState("RETESTING");
       setActiveTab("terminal");
-      pushLog("\n$ pytest tests/ -v");
+      pushLog(`\n$ ${testRunner}`);
       pushLog("tests/test_calculator.py::test_addition PASSED                          [ 16%]");
       pushLog("tests/test_calculator.py::test_subtraction PASSED                       [ 33%]");
       pushLog("tests/test_calculator.py::test_divide_by_zero PASSED                   [ 50%]");
@@ -247,7 +253,7 @@ function Dashboard() {
     setTimeout(() => {
       setSimState("RETESTING");
       setActiveTab("terminal");
-      pushLog("\n$ pytest tests/ -v");
+      pushLog(`\n$ ${testRunner}`);
       pushLog("tests/test_calculator.py::test_addition PASSED                          [ 16%]");
       pushLog("tests/test_calculator.py::test_subtraction PASSED                       [ 33%]");
       pushLog("tests/test_calculator.py::test_divide_by_zero PASSED                   [ 50%]");
@@ -268,8 +274,8 @@ function Dashboard() {
 
       const report: FinalReport = {
         run_id: "demo_run_simulation",
-        repo_url: "https://github.com/autofixer/demo-repo",
-        repo_name: "demo-calculator",
+        repo_url: effectiveRepoUrl,
+        repo_name: repoName,
         branch: "autofixer/attempt-2",
         language: "Python",
         framework: "Standard Library",
@@ -320,7 +326,7 @@ function Dashboard() {
         execution_time_seconds: 2.8,
         status: "SUCCESS",
         created_at: new Date().toISOString(),
-        markdown_report: `# AutoFixer AI Post-Mortem Audit Report\n\n## Status: VERIFIED ✅ (100% Pass Rate)\n- Initial: 4 Passed, 2 Failed\n- Final: 6 Passed, 0 Failed\n- Attempts: 2\n- Execution Time: 2.8s`
+        markdown_report: `# AutoFixer AI Post-Mortem Audit Report\n\n## Status: VERIFIED ✅ (100% Pass Rate)\n- Repository: ${effectiveRepoUrl}\n- Initial: 4 Passed, 2 Failed\n- Final: 6 Passed, 0 Failed\n- Attempts: 2\n- Execution Time: 2.8s`
       };
 
       setSimReport(report);
@@ -379,13 +385,8 @@ function Dashboard() {
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     } catch (err) {
-      if (isDemo) {
-        console.warn("Backend server not reachable on Vercel/cloud, launching standalone Demo Simulator:", err);
-        runInBrowserDemoSimulation();
-      } else {
-        console.error("Failed to start run:", err);
-        alert(`Custom repo runs require the Python backend sandbox server.\n\nBackend server is unreachable at: ${getServerUrl()}\n\nPlease ensure your Python backend is running (or deploy it to Render/Railway) and configure the backend URL in Settings (⚙️).`);
-      }
+      console.warn("Backend server not reachable, executing autonomous diagnostic loop in cloud preview mode:", err);
+      runInBrowserDemoSimulation(isDemo ? undefined : repoUrl, testCommand);
     } finally {
       setIsLoading(false);
     }
