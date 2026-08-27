@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Play, Sparkles, Cpu, Settings, Globe, Check, FolderGit2 } from "lucide-react";
+import { Play, Sparkles, Cpu, Settings, Globe, Check, FolderGit2, LogOut } from "lucide-react";
 import { getServerUrl, setServerUrl } from "../config";
+import { useAuth } from "../context/AuthContext";
 
 interface HeaderProps {
   mode: "demo" | "custom";
@@ -29,7 +30,9 @@ export const Header: React.FC<HeaderProps> = ({
   isLoading,
   isConnected
 }) => {
+  const { user, signOut } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState(getServerUrl());
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -41,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
       setShowSettings(false);
     }, 1200);
   };
+
 
   return (
     <header className="header-panel">
@@ -232,7 +236,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Server Config Settings Button */}
         <button
           className="btn-secondary"
-          onClick={() => setShowSettings(!showSettings)}
+          onClick={() => {
+            setShowSettings(!showSettings);
+            setShowProfileMenu(false);
+          }}
           title={`Backend Server URL: ${getServerUrl()} (${isConnected ? "Connected" : "Disconnected"})`}
           style={{ padding: "0 10px", flexShrink: 0 }}
         >
@@ -245,7 +252,140 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <Settings size={14} />
         </button>
+
+        {/* User Profile Avatar & Menu Button */}
+        {user && (
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              setShowProfileMenu(!showProfileMenu);
+              setShowSettings(false);
+            }}
+            title={`Logged in as ${user.name} (${user.provider})`}
+            style={{
+              padding: "0 8px 0 6px",
+              flexShrink: 0,
+              gap: "6px",
+              display: "flex",
+              alignItems: "center",
+              background: "var(--bg-tertiary)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "var(--radius-md)",
+              height: "34px"
+            }}
+          >
+            <div
+              style={{
+                width: "22px",
+                height: "22px",
+                borderRadius: "50%",
+                background: user.provider === "github" ? "#24292e" : user.provider === "google" ? "#4285F4" : user.provider === "demo" ? "#f59e0b" : "var(--accent-cyan)",
+                color: "#ffffff",
+                fontSize: "11px",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden"
+              }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)", maxWidth: "110px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {user.name}
+            </span>
+          </button>
+        )}
       </div>
+
+      {/* User Profile Dropdown */}
+      {showProfileMenu && user && (
+        <div
+          style={{
+            position: "absolute",
+            top: "65px",
+            right: "20px",
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-color)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px",
+            zIndex: 1000,
+            boxShadow: "0 10px 25px rgba(0,0,0,0.7)",
+            width: "280px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                background: user.provider === "github" ? "#24292e" : user.provider === "google" ? "#4285F4" : user.provider === "demo" ? "#f59e0b" : "var(--accent-cyan)",
+                color: "#ffffff",
+                fontSize: "15px",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div style={{ overflow: "hidden" }}>
+              <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#ffffff" }}>{user.name}</div>
+              <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {user.email}
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: "var(--bg-tertiary)",
+              padding: "6px 10px",
+              borderRadius: "var(--radius-sm)",
+              fontSize: "0.74rem"
+            }}
+          >
+            <span style={{ color: "var(--text-secondary)" }}>Auth Method:</span>
+            <span style={{ fontWeight: 600, color: "var(--accent-cyan)", textTransform: "capitalize" }}>
+              {user.provider === "demo" ? "⚡ Demo Judge" : user.provider === "github" ? "🐙 GitHub" : user.provider === "google" ? "🌐 Google" : "🔑 Credentials"}
+            </span>
+          </div>
+
+          <button
+            onClick={() => {
+              signOut();
+              setShowProfileMenu(false);
+            }}
+            style={{
+              width: "100%",
+              background: "rgba(244, 63, 94, 0.12)",
+              border: "1px solid rgba(244, 63, 94, 0.35)",
+              color: "#fda4af",
+              padding: "8px 12px",
+              borderRadius: "var(--radius-md)",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              transition: "all 0.15s ease"
+            }}
+          >
+            <LogOut size={14} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      )}
 
       {/* Settings Modal Dropdown */}
       {showSettings && (
@@ -306,3 +446,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

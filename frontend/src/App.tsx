@@ -6,6 +6,8 @@ import { TerminalPanel } from "./components/TerminalPanel";
 import { DiffViewer } from "./components/DiffViewer";
 import { InsightsPanel } from "./components/InsightsPanel";
 import { FinalReportModal } from "./components/FinalReportModal";
+import { LoginPage } from "./components/LoginPage";
+import { AuthProviderComponent, useAuth } from "./context/AuthContext";
 import { useAgentWebSocket } from "./hooks/useAgentWebSocket";
 import { getServerUrl } from "./config";
 import {
@@ -16,10 +18,12 @@ import {
   GitCompare,
   Brain,
   LayoutGrid,
-  Columns
+  Columns,
+  Cpu
 } from "lucide-react";
 
-export function App() {
+function Dashboard() {
+
   const [mode, setMode] = useState<"demo" | "custom">("demo");
   const [repoUrl, setRepoUrl] = useState("");
   const [testCommand, setTestCommand] = useState("");
@@ -364,4 +368,58 @@ export function App() {
   );
 }
 
+function MainAuthRouter() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "radial-gradient(ellipse at 50% 15%, #0f1d36 0%, #090c10 75%)",
+          gap: "16px"
+        }}
+      >
+        <div
+          style={{
+            background: "linear-gradient(135deg, #0284c7, #06b6d4)",
+            width: "48px",
+            height: "48px",
+            borderRadius: "var(--radius-md)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 0 20px rgba(6, 182, 212, 0.5)"
+          }}
+        >
+          <Cpu size={28} color="#ffffff" />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--accent-cyan)", fontSize: "14px", fontWeight: 600 }}>
+          <span className="pulse-dot" style={{ background: "var(--accent-cyan)", color: "var(--accent-cyan)" }} />
+          <span>Initializing AutoFixer AI...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  return <Dashboard />;
+}
+
+export function App() {
+  return (
+    <AuthProviderComponent>
+      <MainAuthRouter />
+    </AuthProviderComponent>
+  );
+}
+
 export default App;
+
