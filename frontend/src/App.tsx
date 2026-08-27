@@ -150,8 +150,16 @@ function Dashboard() {
       {isFinished && finalReport && (
         <div
           style={{
-            background: isSuccess ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
-            border: isSuccess ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid rgba(245, 158, 11, 0.4)",
+            background: isSuccess
+              ? "rgba(16, 185, 129, 0.15)"
+              : (testSummary && testSummary.initial && testSummary.initial.passed === 0 && testSummary.initial.failed === 0)
+              ? "rgba(6, 182, 212, 0.12)"
+              : "rgba(245, 158, 11, 0.15)",
+            border: isSuccess
+              ? "1px solid rgba(16, 185, 129, 0.4)"
+              : (testSummary && testSummary.initial && testSummary.initial.passed === 0 && testSummary.initial.failed === 0)
+              ? "1px solid rgba(6, 182, 212, 0.35)"
+              : "1px solid rgba(245, 158, 11, 0.4)",
             padding: "10px 16px",
             borderRadius: "var(--radius-lg)",
             display: "flex",
@@ -162,15 +170,30 @@ function Dashboard() {
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {isSuccess ? (
               <CheckCircle2 size={20} color="var(--accent-emerald)" />
+            ) : (testSummary && testSummary.initial && testSummary.initial.passed === 0 && testSummary.initial.failed === 0) ? (
+              <AlertCircle size={20} color="var(--accent-cyan)" />
             ) : (
               <AlertCircle size={20} color="var(--accent-amber)" />
             )}
             <div>
-              <span style={{ fontWeight: "700", color: isSuccess ? "var(--accent-emerald)" : "var(--accent-amber)" }}>
-                {isSuccess ? "Autonomous Repair Successful! (VERIFIED ✅)" : "Iteration Cap Reached — Human Escalation Required"}
+              <span style={{
+                fontWeight: "700",
+                color: isSuccess
+                  ? "var(--accent-emerald)"
+                  : (testSummary && testSummary.initial && testSummary.initial.passed === 0 && testSummary.initial.failed === 0)
+                  ? "var(--accent-cyan)"
+                  : "var(--accent-amber)"
+              }}>
+                {isSuccess
+                  ? "Autonomous Repair Successful! (VERIFIED ✅)"
+                  : (testSummary && testSummary.initial && testSummary.initial.passed === 0 && testSummary.initial.failed === 0)
+                  ? "No Automated Unit Tests Detected in Repository"
+                  : "Iteration Cap Reached — Human Escalation Required"}
               </span>
               <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginLeft: "8px" }}>
-                Completed in {finalReport.execution_time_seconds}s across {finalReport.attempts_count} attempt(s).
+                {(testSummary && testSummary.initial && testSummary.initial.passed === 0 && testSummary.initial.failed === 0)
+                  ? "AutoFixer AI requires unit test files (e.g. pytest, npm test, unittest) with assertion checks to verify fixes."
+                  : `Completed in ${finalReport.execution_time_seconds}s across ${finalReport.attempts_count} attempt(s).`}
               </span>
             </div>
           </div>

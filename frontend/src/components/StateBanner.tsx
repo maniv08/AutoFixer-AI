@@ -203,6 +203,28 @@ export const StateBanner: React.FC<StateBannerProps> = ({
                 </div>
               );
             }
+            if (hasTests && initialPassed === 0 && initialFailed === 0 && !isIdle) {
+              return (
+                <div
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "var(--radius-md)",
+                    background: "rgba(245, 158, 11, 0.15)",
+                    border: "1px solid rgba(245, 158, 11, 0.35)",
+                    color: "#fbbf24",
+                    fontSize: "0.78rem",
+                    fontWeight: "600",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    flexShrink: 0
+                  }}
+                >
+                  <Clock size={14} />
+                  <span>0 Tests Found in Repo</span>
+                </div>
+              );
+            }
             return (
               <div
                 style={{
