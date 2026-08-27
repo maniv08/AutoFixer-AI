@@ -146,7 +146,7 @@ function Dashboard() {
       };
       setSimSummary(initSummary);
       pushEvent("test_update", { test_summary: initSummary }, "RUNNING_TESTS", 1);
-    }, 1200);
+    }, 350);
 
     // Step 2: Formulate hypothesis & generate Patch 1
     setTimeout(() => {
@@ -162,7 +162,7 @@ function Dashboard() {
       };
       setSimHypotheses([hyp1]);
       pushEvent("hypothesis", { hypothesis: hyp1 }, "ROOT_CAUSE_FOUND", 1);
-    }, 2800);
+    }, 750);
 
     // Step 3: Apply Patch 1 with AST gate
     setTimeout(() => {
@@ -180,7 +180,7 @@ function Dashboard() {
       };
       setSimPatches([patch1]);
       pushEvent("patch", { patch: patch1 }, "FIXING", 1);
-    }, 4200);
+    }, 1150);
 
     // Step 4: Retest 1 & Trigger Reflection
     setTimeout(() => {
@@ -203,7 +203,7 @@ function Dashboard() {
       };
       setSimSummary(summary1);
       pushEvent("test_update", { test_summary: summary1 }, "RETESTING", 1);
-    }, 5600);
+    }, 1550);
 
     // Step 5: Reflection Card
     setTimeout(() => {
@@ -224,7 +224,7 @@ function Dashboard() {
       };
       setSimReflections([ref1]);
       pushEvent("reflection", { reflection: ref1 }, "REFLECTING", 2);
-    }, 7200);
+    }, 2000);
 
     // Step 6: Apply Patch 2 & Retest 100% Pass
     setTimeout(() => {
@@ -241,7 +241,7 @@ function Dashboard() {
       };
       setSimPatches((prev) => [...prev, patch2]);
       pushEvent("patch", { patch: patch2 }, "FIXING", 2);
-    }, 8800);
+    }, 2400);
 
     // Step 7: Final Retest (All Passed)
     setTimeout(() => {
@@ -317,16 +317,16 @@ function Dashboard() {
         ],
         attempts_count: 2,
         max_attempts: 5,
-        execution_time_seconds: 10.4,
+        execution_time_seconds: 2.8,
         status: "SUCCESS",
         created_at: new Date().toISOString(),
-        markdown_report: `# AutoFixer AI Post-Mortem Audit Report\n\n## Status: VERIFIED ✅ (100% Pass Rate)\n- Initial: 4 Passed, 2 Failed\n- Final: 6 Passed, 0 Failed\n- Attempts: 2\n- Execution Time: 10.4s`
+        markdown_report: `# AutoFixer AI Post-Mortem Audit Report\n\n## Status: VERIFIED ✅ (100% Pass Rate)\n- Initial: 4 Passed, 2 Failed\n- Final: 6 Passed, 0 Failed\n- Attempts: 2\n- Execution Time: 2.8s`
       };
 
       setSimReport(report);
       setSimState("SUCCESS");
       pushEvent("report", { report }, "SUCCESS", 2);
-    }, 10400);
+    }, 2800);
   };
 
   const handleStartRun = async () => {

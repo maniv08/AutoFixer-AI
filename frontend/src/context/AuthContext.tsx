@@ -119,12 +119,12 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let isMounted = true;
 
-    // Safety timeout: Never keep the user on the initial splash screen for more than 1 second
+    // Fast initial check: Never keep the user waiting for more than 150ms
     const safetyTimer = setTimeout(() => {
       if (isMounted) {
         setIsLoading(false);
       }
-    }, 1000);
+    }, 150);
 
     if (isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(
