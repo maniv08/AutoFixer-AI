@@ -49,6 +49,10 @@ export const LoginPage: React.FC = () => {
     setLoadingType("github");
     try {
       await signInWithGithub();
+    } catch (err: any) {
+      if (err.code !== "auth/popup-closed-by-user") {
+        setErrorMsg(err.message || "GitHub sign-in failed. Please try again.");
+      }
     } finally {
       setLoadingType(null);
     }
@@ -59,6 +63,10 @@ export const LoginPage: React.FC = () => {
     setLoadingType("google");
     try {
       await signInWithGoogle();
+    } catch (err: any) {
+      if (err.code !== "auth/popup-closed-by-user") {
+        setErrorMsg(err.message || "Google sign-in failed. Please try again.");
+      }
     } finally {
       setLoadingType(null);
     }
