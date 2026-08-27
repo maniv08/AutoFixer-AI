@@ -5,10 +5,21 @@
 export const DEFAULT_PRODUCTION_BACKEND_URL = "https://autofixer-ai-1025.onrender.com";
 
 export function getServerUrl(): string {
+  const isProduction =
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+
   // 1. Check local storage override if user customized in UI
   const stored = localStorage.getItem("autofixer_server_url");
   if (stored && stored.trim()) {
-    return stored.trim().replace(/\/+$/, "");
+    const cleanStored = stored.trim().replace(/\/+$/, "");
+    // Automatically purge old localhost URLs on production devices so visitors connect to Render cloud
+    if (isProduction && (cleanStored.includes("localhost") || cleanStored.includes("127.0.0.1") || cleanStored.includes("your-backend"))) {
+      localStorage.setItem("autofixer_server_url", DEFAULT_PRODUCTION_BACKEND_URL);
+      return DEFAULT_PRODUCTION_BACKEND_URL;
+    }
+    return cleanStored;
   }
 
   // 2. Check environment variable
