@@ -6,14 +6,14 @@ import {
   type Auth
 } from "firebase/auth";
 
-// Firebase Configuration from Vite Environment Variables
+// Firebase Configuration from Vite Environment Variables with fallback defaults
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDMz9QbQWgxpOpIKLz8zFsZp6O_fdsdASA",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "autofixer-ai-2896c.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "autofixer-ai-2896c",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "autofixer-ai-2896c.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "732997179016",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:732997179016:web:3bc62a6141b84b9ff2313d"
 };
 
 export const isFirebaseConfigured: boolean = Boolean(
