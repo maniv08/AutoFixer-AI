@@ -50,46 +50,35 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="header-panel">
       {/* Brand & Subtitle Group */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+      <div className="header-brand">
         <img
           src="/logo.png"
           alt="AutoFixer AI Logo"
           style={{
-            width: "38px",
-            height: "38px",
+            width: "36px",
+            height: "36px",
             borderRadius: "var(--radius-md)",
             objectFit: "cover",
-            boxShadow: "0 0 14px rgba(6, 182, 212, 0.45)",
+            boxShadow: "0 0 12px rgba(6, 182, 212, 0.4)",
             flexShrink: 0,
             border: "1px solid rgba(56, 189, 248, 0.3)"
           }}
           onError={(e) => {
-            // fallback to stylized icon if image fails
             e.currentTarget.style.display = "none";
           }}
         />
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <h1 style={{ fontSize: "1.15rem", fontWeight: "700", letterSpacing: "-0.02em", lineHeight: "1.2" }}>
+          <h1 style={{ fontSize: "1.1rem", fontWeight: "700", letterSpacing: "-0.02em", lineHeight: "1.2", whiteSpace: "nowrap" }}>
             AutoFixer <span style={{ color: "var(--accent-cyan)" }}>AI</span>
           </h1>
-          <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2", marginTop: "2px" }}>
-            Give it a broken repository. It finds, fixes, tests, and verifies the solution.
+          <p className="header-subtitle" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: "1.2", marginTop: "2px", whiteSpace: "nowrap" }}>
+            Autonomous Software QA & Refactoring Agent
           </p>
         </div>
       </div>
 
       {/* Target Selector & Execution Controls */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          flex: 1,
-          justifyContent: "flex-end",
-          flexWrap: "nowrap",
-          minWidth: 0
-        }}
-      >
+      <div className="header-controls">
         {/* Mode Selector Pill */}
         <div
           style={{
@@ -110,14 +99,14 @@ export const Header: React.FC<HeaderProps> = ({
               display: "flex",
               alignItems: "center",
               gap: "5px",
-              padding: "0 12px",
+              padding: "0 10px",
               height: "28px",
               borderRadius: "var(--radius-sm)",
-              fontSize: "0.78rem",
+              fontSize: "0.76rem",
               fontWeight: "600",
               cursor: "pointer",
               border: "none",
-              background: mode === "demo" ? "rgba(245, 158, 11, 0.15)" : "transparent",
+              background: mode === "demo" ? "rgba(245, 158, 11, 0.18)" : "transparent",
               color: mode === "demo" ? "#fbbf24" : "var(--text-secondary)",
               transition: "all 0.15s"
             }}
@@ -133,14 +122,14 @@ export const Header: React.FC<HeaderProps> = ({
               display: "flex",
               alignItems: "center",
               gap: "5px",
-              padding: "0 12px",
+              padding: "0 10px",
               height: "28px",
               borderRadius: "var(--radius-sm)",
-              fontSize: "0.78rem",
+              fontSize: "0.76rem",
               fontWeight: "600",
               cursor: "pointer",
               border: "none",
-              background: mode === "custom" ? "rgba(6, 182, 212, 0.15)" : "transparent",
+              background: mode === "custom" ? "rgba(6, 182, 212, 0.18)" : "transparent",
               color: mode === "custom" ? "var(--accent-cyan)" : "var(--text-secondary)",
               transition: "all 0.15s"
             }}
@@ -152,18 +141,22 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Custom Repo Mode Inputs */}
         {mode === "custom" && (
-          <>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
             {/* GitHub Account Repos Quick Selector */}
             {user?.provider === "github" && (
-              <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
                 <select
                   className="input-field"
                   style={{
-                    maxWidth: "220px",
+                    width: "165px",
+                    height: "34px",
                     background: "var(--bg-tertiary)",
                     color: repoUrl && userRepos.some(r => r.html_url === repoUrl) ? "var(--accent-cyan)" : "var(--text-secondary)",
                     cursor: "pointer",
-                    paddingRight: "8px"
+                    padding: "0 6px",
+                    fontSize: "0.76rem",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap"
                   }}
                   value={userRepos.find(r => r.html_url === repoUrl)?.html_url || ""}
                   onChange={(e) => {
@@ -175,11 +168,11 @@ export const Header: React.FC<HeaderProps> = ({
                   title="Select a repository directly from your GitHub account"
                 >
                   <option value="">
-                    {isLoadingRepos ? "⏳ Loading repositories..." : `🐙 My GitHub Repos (${userRepos.length})`}
+                    {isLoadingRepos ? "Loading repos..." : `🐙 Repos (${userRepos.length})`}
                   </option>
                   {userRepos.map((r) => (
                     <option key={r.id} value={r.html_url} style={{ background: "var(--bg-card)", color: "#ffffff" }}>
-                      {r.name} {r.private ? "🔒" : ""} {r.language ? `(${r.language})` : ""}
+                      {r.name} {r.private ? "🔒" : ""}
                     </option>
                   ))}
                 </select>
@@ -194,15 +187,16 @@ export const Header: React.FC<HeaderProps> = ({
                     border: "1px solid var(--border-color)",
                     borderRadius: "var(--radius-md)",
                     height: "34px",
-                    width: "34px",
+                    width: "30px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: "var(--text-secondary)"
+                    color: "var(--text-secondary)",
+                    flexShrink: 0
                   }}
                 >
-                  <RotateCw size={13} className={isLoadingRepos ? "pulse-dot" : ""} />
+                  <RotateCw size={12} className={isLoadingRepos ? "pulse-dot" : ""} />
                 </button>
               </div>
             )}
@@ -211,8 +205,13 @@ export const Header: React.FC<HeaderProps> = ({
             <input
               type="text"
               className="input-field"
-              style={{ flex: "1 1 240px", minWidth: "190px", maxWidth: "340px" }}
-              placeholder="https://github.com/username/project"
+              style={{
+                width: "210px",
+                height: "34px",
+                padding: "0 10px",
+                fontSize: "0.78rem"
+              }}
+              placeholder="https://github.com/..."
               value={repoUrl}
               onChange={(e) => setRepoUrl(e.target.value)}
               disabled={isLoading}
@@ -223,14 +222,20 @@ export const Header: React.FC<HeaderProps> = ({
             <input
               type="text"
               className="input-field"
-              style={{ width: "190px", flexShrink: 0 }}
-              placeholder="Auto-detect (e.g. pytest)"
+              style={{
+                width: "130px",
+                height: "34px",
+                padding: "0 8px",
+                fontSize: "0.78rem",
+                flexShrink: 0
+              }}
+              placeholder="Command (opt)"
               value={testCommand}
               onChange={(e) => setTestCommand(e.target.value)}
               disabled={isLoading}
-              title="Test Command (Optional) - Leave blank for automatic test framework detection"
+              title="Test Command (Optional) - Leave blank for auto-detection (pytest/npm/mvn)"
             />
-          </>
+          </div>
         )}
 
         {/* Retries Selector */}
@@ -238,7 +243,7 @@ export const Header: React.FC<HeaderProps> = ({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "6px",
+            gap: "4px",
             background: "var(--bg-tertiary)",
             border: "1px solid var(--border-color)",
             borderRadius: "var(--radius-md)",
@@ -247,13 +252,13 @@ export const Header: React.FC<HeaderProps> = ({
             flexShrink: 0
           }}
         >
-          <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: "500" }}>Retries:</span>
+          <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)", fontWeight: "500" }}>Retries:</span>
           <select
             style={{
               background: "transparent",
               border: "none",
               color: "var(--text-primary)",
-              fontSize: "0.8rem",
+              fontSize: "0.78rem",
               fontFamily: "var(--font-mono)",
               outline: "none",
               cursor: "pointer"
@@ -270,22 +275,22 @@ export const Header: React.FC<HeaderProps> = ({
           </select>
         </div>
 
-        {/* Single Primary Call-to-Action: Start Agent Button */}
+        {/* Primary Call-to-Action: Start Agent Button */}
         <button
           className="btn-primary"
           onClick={onStartRun}
           disabled={isLoading}
-          style={{ minWidth: "125px", justifyContent: "center", flexShrink: 0 }}
+          style={{ height: "34px", minWidth: "115px", padding: "0 12px", justifyContent: "center", flexShrink: 0 }}
         >
           {isLoading ? (
             <>
               <span className="pulse-dot" style={{ color: "#ffffff", background: "#ffffff" }}></span>
-              <span>Refactoring...</span>
+              <span style={{ fontSize: "0.78rem" }}>Refactoring...</span>
             </>
           ) : (
             <>
-              <Play size={13} fill="#ffffff" />
-              <span>Start Agent</span>
+              <Play size={12} fill="#ffffff" />
+              <span style={{ fontSize: "0.78rem" }}>Start Agent</span>
             </>
           )}
         </button>
