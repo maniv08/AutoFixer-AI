@@ -1,32 +1,54 @@
-# React + TypeScript + Vite
+# AutoFixer AI — Frontend (Vite + React + TypeScript)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This is the web dashboard for AutoFixer AI, providing real-time WebSocket event streaming, monospace terminal logs, visual git diffs, agent reflection cards, and downloadable post-mortem audit reports.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Deploying to Vercel
 
-## React Compiler
+### Option 1: Vercel Web Dashboard (Recommended)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Push your repository to GitHub.
+2. Go to [Vercel Dashboard](https://vercel.com/new) and click **"Add New..." → "Project"**.
+3. Import your GitHub repository (`autofixer-ai`).
+4. In the **Project Settings**:
+   - **Root Directory**: Click **Edit** and choose `frontend` (⚠️ **Crucial Step**).
+   - **Framework Preset**: `Vite` (auto-detected).
+   - **Build Command**: `npm run build` (auto-detected).
+   - **Output Directory**: `dist` (auto-detected).
+5. In **Environment Variables**, add:
+   - `VITE_API_URL`: The URL of your deployed FastAPI backend (e.g., `https://autofixer-api.onrender.com`).
+6. Click **Deploy**!
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+### Option 2: Vercel CLI
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+cd frontend
+npx vercel
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Follow the prompts:
+- **Set up and deploy?**: `y`
+- **Which scope?**: Choose your personal/team account.
+- **Link to existing project?**: `n`
+- **Project name**: `autofixer-ai-dashboard`
+- **In which directory is your code located?**: `./`
+- **Want to modify build settings?**: `n`
+
+To set the production environment variable:
+```bash
+npx vercel env add VITE_API_URL production
+# Enter your backend URL when prompted, e.g. https://autofixer-api.onrender.com
+npx vercel --prod
+```
+
+---
+
+## ⚙️ Backend Connectivity & Dynamic Switching
+
+The dashboard connects to the AutoFixer FastAPI backend via REST API and WebSockets:
+- **Build Time**: Set `VITE_API_URL` in Vercel environment variables.
+- **Runtime / Dynamic**: Users can click the **⚙️ Settings** icon in the dashboard header to connect to any backend URL at runtime (saved in local storage).
+

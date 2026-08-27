@@ -108,6 +108,24 @@ Open **http://localhost:5180** in your browser.
 
 ---
 
+## 🌐 Production & Cloud Deployment
+
+### 1. Frontend on Vercel
+1. Import your repository on [Vercel](https://vercel.com/new).
+2. Set **Root Directory** to `frontend`.
+3. In **Environment Variables**, configure:
+   - `VITE_API_URL`: URL of your deployed backend (e.g. `https://autofixer-api.onrender.com`).
+4. Click **Deploy**.
+
+### 2. Backend on Render / Railway / Fly.io / VPS
+The backend executes dynamic test suites in sandboxes and requires a persistent container service with WebSocket support:
+- **Render / Railway**: Deploy as a Web Service from the repo using `docker/Dockerfile.backend` (or Python root `backend`, command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`).
+- **Environment Variables**:
+  - `GEMINI_API_KEY`: Your Gemini API key.
+  - `LLM_PROVIDER`: `gemini` (or `openai` / `anthropic`).
+
+---
+
 ## 🐳 Docker Deployment
 
 To launch the complete stack with a single command:
