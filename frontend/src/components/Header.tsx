@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Sparkles, Settings, Globe, Check, FolderGit2, LogOut, RotateCw } from "lucide-react";
-import { getServerUrl, setServerUrl } from "../config";
+import { getServerUrl, setServerUrl, DEFAULT_PRODUCTION_BACKEND_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 
 interface HeaderProps {
@@ -543,8 +543,10 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               className="btn-secondary"
               onClick={() => {
-                setServerUrlInput("http://localhost:8000");
-                setServerUrl("http://localhost:8000");
+                const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+                const defUrl = isLocal ? "http://localhost:8000" : DEFAULT_PRODUCTION_BACKEND_URL;
+                setServerUrlInput(defUrl);
+                setServerUrl(defUrl);
               }}
               style={{ fontSize: "0.72rem", height: "28px" }}
             >
