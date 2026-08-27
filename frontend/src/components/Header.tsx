@@ -35,11 +35,37 @@ export const Header: React.FC<HeaderProps> = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState(getServerUrl());
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isServerHealthy, setIsServerHealthy] = useState<boolean>(true);
 
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsDropdownRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Background server health check ping
+  useEffect(() => {
+    let isMounted = true;
+    const checkHealth = async () => {
+      try {
+        const url = getServerUrl();
+        const res = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(5000) });
+        if (isMounted) {
+          setIsServerHealthy(res.ok);
+        }
+      } catch {
+        if (isMounted) {
+          setIsServerHealthy(false);
+        }
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 25000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
@@ -355,14 +381,14 @@ export const Header: React.FC<HeaderProps> = ({
             setShowSettings(!showSettings);
             setShowProfileMenu(false);
           }}
-          title={`Backend Server URL: ${getServerUrl()} (${isConnected ? "Connected" : "Disconnected"})`}
+          title={`Backend Server URL: ${getServerUrl()} (${(isConnected || isServerHealthy) ? "Online 🟢" : "Offline 🔴"})`}
           style={{ padding: "0 10px", flexShrink: 0 }}
         >
           <span
             className="pulse-dot"
             style={{
-              background: isConnected ? "var(--accent-emerald)" : "var(--accent-rose)",
-              color: isConnected ? "var(--accent-emerald)" : "var(--accent-rose)"
+              background: (isConnected || isServerHealthy) ? "var(--accent-emerald)" : "var(--accent-rose)",
+              color: (isConnected || isServerHealthy) ? "var(--accent-emerald)" : "var(--accent-rose)"
             }}
           />
           <Settings size={14} />
