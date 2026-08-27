@@ -38,6 +38,7 @@ if (isFirebaseConfigured) {
     githubAuthProvider = new GithubAuthProvider();
     githubAuthProvider.addScope("read:user");
     githubAuthProvider.addScope("user:email");
+    githubAuthProvider.addScope("repo");
   } catch (error) {
     console.error("Firebase initialization failed:", error);
   }

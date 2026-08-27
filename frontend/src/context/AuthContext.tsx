@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import type { User, AuthContextType } from "../types/auth";
+import type { User, AuthContextType, GithubRepoItem } from "../types/auth";
 import {
   auth,
   googleProvider,
@@ -13,6 +13,7 @@ import {
   updateProfile,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  GithubAuthProvider,
   type User as FirebaseUser
 } from "firebase/auth";
 
@@ -23,32 +24,117 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [userRepos, setUserRepos] = useState<GithubRepoItem[]>([]);
+  const [isLoadingRepos, setIsLoadingRepos] = useState<boolean>(false);
 
   // Convert a Firebase User into our application's User object
-  const mapFirebaseUser = (fbUser: FirebaseUser, providerType?: string): User => {
+  const mapFirebaseUser = (
+    fbUser: FirebaseUser,
+    providerType?: string,
+    githubToken?: string,
+    githubLogin?: string
+  ): User => {
     const providerId = fbUser.providerData[0]?.providerId || providerType || "";
     let provider: "github" | "google" | "credentials" = "credentials";
     if (providerId.includes("github")) provider = "github";
     else if (providerId.includes("google")) provider = "google";
 
+    // Try to get screen name / GitHub username if available
+    const derivedUsername =
+      githubLogin ||
+      (fbUser as any).reloadUserInfo?.screenName ||
+      fbUser.email?.split("@")[0] ||
+      "developer";
+
     return {
       id: fbUser.uid,
-      name: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
-      username: fbUser.email?.split("@")[0] || "dev",
-      email: fbUser.email || "developer@autofixer.dev",
+      name: fbUser.displayName || derivedUsername,
+      username: derivedUsername,
+      email: fbUser.email || `${derivedUsername}@users.noreply.github.com`,
       avatarUrl: fbUser.photoURL || undefined,
       provider: provider,
       role: "developer",
+      githubAccessToken: githubToken,
       createdAt: fbUser.metadata.creationTime || new Date().toISOString()
     };
   };
+
+  const saveUserSession = (newUser: User) => {
+    setUser(newUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
+  };
+
+  // Fetch the logged-in user's GitHub repositories
+  const fetchUserGithubRepos = async (): Promise<GithubRepoItem[]> => {
+    if (!user) return [];
+
+    setIsLoadingRepos(true);
+    try {
+      let url = "https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator";
+      const headers: Record<string, string> = {
+        Accept: "application/vnd.github.v3+json"
+      };
+
+      if (user.githubAccessToken) {
+        headers["Authorization"] = `Bearer ${user.githubAccessToken}`;
+      } else if (user.username && user.provider === "github") {
+        url = `https://api.github.com/users/${encodeURIComponent(user.username)}/repos?sort=updated&per_page=100`;
+      }
+
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        // Fallback to public repos by username if token lacks scope or rate limited
+        if (user.username) {
+          const publicRes = await fetch(`https://api.github.com/users/${encodeURIComponent(user.username)}/repos?sort=updated&per_page=50`);
+          if (publicRes.ok) {
+            const data: GithubRepoItem[] = await publicRes.json();
+            setUserRepos(data);
+            return data;
+          }
+        }
+        return [];
+      }
+
+      const data: GithubRepoItem[] = await res.json();
+      setUserRepos(data);
+      return data;
+    } catch (err) {
+      console.error("Failed to fetch user GitHub repositories:", err);
+      return [];
+    } finally {
+      setIsLoadingRepos(false);
+    }
+  };
+
+  // Automatically fetch repos when a GitHub user logs in
+  useEffect(() => {
+    if (user && user.provider === "github") {
+      fetchUserGithubRepos();
+    } else {
+      setUserRepos([]);
+    }
+  }, [user?.id, user?.provider, user?.githubAccessToken]);
 
   // Listen to Firebase Auth state or load local storage
   useEffect(() => {
     if (isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
         if (fbUser) {
-          const appUser = mapFirebaseUser(fbUser);
+          // Check if we already have a token stored in localStorage for this user
+          let existingToken: string | undefined;
+          let existingUsername: string | undefined;
+          try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (parsed.id === fbUser.uid) {
+                existingToken = parsed.githubAccessToken;
+                existingUsername = parsed.username;
+              }
+            }
+          } catch {}
+
+          const appUser = mapFirebaseUser(fbUser, undefined, existingToken, existingUsername);
           setUser(appUser);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appUser));
         } else {
@@ -77,18 +163,17 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const saveUserSession = (newUser: User) => {
-    setUser(newUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-  };
-
   // Real GitHub OAuth Sign In
   const signInWithGithub = async (): Promise<void> => {
     setIsLoading(true);
     try {
       if (isFirebaseConfigured && auth && githubProvider) {
         const result = await signInWithPopup(auth, githubProvider);
-        const appUser = mapFirebaseUser(result.user, "github");
+        const credential = GithubAuthProvider.credentialFromResult(result);
+        const token = credential?.accessToken;
+        const screenName = (result as any)._tokenResponse?.screenName;
+
+        const appUser = mapFirebaseUser(result.user, "github", token, screenName);
         saveUserSession(appUser);
       } else {
         // Fallback simulation if Firebase keys not provided yet in .env
@@ -96,8 +181,8 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         const simulatedUser: User = {
           id: "gh_" + Math.random().toString(36).substring(2, 9),
           name: "GitHub Developer",
-          username: "octocat-dev",
-          email: "developer@github.com",
+          username: "maniv08",
+          email: "vmanikandan9165@gmail.com",
           avatarUrl: "https://avatars.githubusercontent.com/u/9919?v=4",
           provider: "github",
           role: "developer",
@@ -169,7 +254,6 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     try {
       if (isFirebaseConfigured && auth) {
         if (isRegister) {
-          // Create new Firebase account
           const userCred = await createUserWithEmailAndPassword(auth, formattedEmail, password);
           if (name?.trim()) {
             await updateProfile(userCred.user, { displayName: name.trim() });
@@ -177,13 +261,11 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           const appUser = mapFirebaseUser(userCred.user, "credentials");
           saveUserSession(appUser);
         } else {
-          // Sign in existing Firebase account
           const userCred = await signInWithEmailAndPassword(auth, formattedEmail, password);
           const appUser = mapFirebaseUser(userCred.user, "credentials");
           saveUserSession(appUser);
         }
       } else {
-        // Fallback local account when Firebase keys are not in .env
         await new Promise((r) => setTimeout(r, 400));
         const derivedName = name?.trim() || cleanInput.split("@")[0];
         const credUser: User = {
@@ -243,6 +325,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       console.error("Sign out error:", e);
     } finally {
       setUser(null);
+      setUserRepos([]);
       localStorage.removeItem(STORAGE_KEY);
     }
   };
@@ -253,6 +336,9 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         user,
         isAuthenticated: !!user,
         isLoading,
+        userRepos,
+        isLoadingRepos,
+        fetchUserGithubRepos,
         signInWithGithub,
         signInWithGoogle,
         signInWithCredentials,

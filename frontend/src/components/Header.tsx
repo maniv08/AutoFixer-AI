@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Play, Sparkles, Settings, Globe, Check, FolderGit2, LogOut } from "lucide-react";
+import { Play, Sparkles, Settings, Globe, Check, FolderGit2, LogOut, RotateCw } from "lucide-react";
 import { getServerUrl, setServerUrl } from "../config";
 import { useAuth } from "../context/AuthContext";
 
@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   isLoading,
   isConnected
 }) => {
-  const { user, signOut } = useAuth();
+  const { user, userRepos, isLoadingRepos, fetchUserGithubRepos, signOut } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState(getServerUrl());
@@ -44,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
       setShowSettings(false);
     }, 1200);
   };
+
 
 
   return (
@@ -152,6 +153,60 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Custom Repo Mode Inputs */}
         {mode === "custom" && (
           <>
+            {/* GitHub Account Repos Quick Selector */}
+            {user?.provider === "github" && (
+              <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                <select
+                  className="input-field"
+                  style={{
+                    maxWidth: "220px",
+                    background: "var(--bg-tertiary)",
+                    color: repoUrl && userRepos.some(r => r.html_url === repoUrl) ? "var(--accent-cyan)" : "var(--text-secondary)",
+                    cursor: "pointer",
+                    paddingRight: "8px"
+                  }}
+                  value={userRepos.find(r => r.html_url === repoUrl)?.html_url || ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setRepoUrl(e.target.value);
+                    }
+                  }}
+                  disabled={isLoading || isLoadingRepos}
+                  title="Select a repository directly from your GitHub account"
+                >
+                  <option value="">
+                    {isLoadingRepos ? "⏳ Loading repositories..." : `🐙 My GitHub Repos (${userRepos.length})`}
+                  </option>
+                  {userRepos.map((r) => (
+                    <option key={r.id} value={r.html_url} style={{ background: "var(--bg-card)", color: "#ffffff" }}>
+                      {r.name} {r.private ? "🔒" : ""} {r.language ? `(${r.language})` : ""}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={fetchUserGithubRepos}
+                  disabled={isLoadingRepos}
+                  title="Refresh GitHub Repositories"
+                  style={{
+                    background: "var(--bg-tertiary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "var(--radius-md)",
+                    height: "34px",
+                    width: "34px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "var(--text-secondary)"
+                  }}
+                >
+                  <RotateCw size={13} className={isLoadingRepos ? "pulse-dot" : ""} />
+                </button>
+              </div>
+            )}
+
             {/* Custom GitHub Repo URL Input (Required) */}
             <input
               type="text"
