@@ -42,6 +42,15 @@ async def read_file(
     Supports start_line and end_line slicing (1-indexed).
     """
     try:
+        resolved_path = file_path
+        if not await sandbox.file_exists(resolved_path):
+            all_files = await sandbox.list_files()
+            norm_target = file_path.replace("\\", "/")
+            matching = [f for f in all_files if f.replace("\\", "/").endswith(norm_target)]
+            if matching:
+                resolved_path = matching[0]
+        file_path = resolved_path
+
         content = await sandbox.read_file(file_path)
         lines = content.splitlines()
         total_lines = len(lines)

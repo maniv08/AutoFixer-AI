@@ -18,13 +18,21 @@ async def apply_patch(
     Validates Python syntax before finalizing.
     """
     try:
-        if not await sandbox.file_exists(target_file):
-            return {
-                "success": False,
-                "error": f"Target file '{target_file}' does not exist.",
-                "target": target_file,
-                "reason": reason
-            }
+        resolved_file = target_file
+        if not await sandbox.file_exists(resolved_file):
+            all_files = await sandbox.list_files()
+            norm_target = target_file.replace("\\", "/")
+            matching = [f for f in all_files if f.replace("\\", "/").endswith(norm_target)]
+            if matching:
+                resolved_file = matching[0]
+            else:
+                return {
+                    "success": False,
+                    "error": f"Target file '{target_file}' does not exist.",
+                    "target": target_file,
+                    "reason": reason
+                }
+        target_file = resolved_file
 
         original_content = await sandbox.read_file(target_file)
         
