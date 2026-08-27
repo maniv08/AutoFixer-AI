@@ -7,10 +7,12 @@ interface TimelineProps {
 }
 
 export const Timeline: React.FC<TimelineProps> = ({ events }) => {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (listContainerRef.current && events.length > 0) {
+      listContainerRef.current.scrollTop = listContainerRef.current.scrollHeight;
+    }
   }, [events]);
 
   const getToolIcon = (toolName: string) => {
@@ -47,7 +49,7 @@ export const Timeline: React.FC<TimelineProps> = ({ events }) => {
         </span>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", paddingRight: "4px" }}>
+      <div ref={listContainerRef} style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", paddingRight: "4px" }}>
         {events.length === 0 ? (
           <div style={{ padding: "30px 10px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.82rem" }}>
             Ready to initialize agent. Click <strong>Start Agent</strong> or <strong>1-Click Demo Repo</strong> above.
@@ -134,7 +136,6 @@ export const Timeline: React.FC<TimelineProps> = ({ events }) => {
             return null;
           })
         )}
-        <div ref={bottomRef} />
       </div>
     </div>
   );

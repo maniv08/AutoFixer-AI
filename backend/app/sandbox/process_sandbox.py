@@ -67,6 +67,21 @@ class ProcessSandbox(BaseSandbox):
         clean_env["PYTHONDONTWRITEBYTECODE"] = "1"
         clean_env["CI"] = "true"
 
+        # Add workspace path and immediate subfolders to PYTHONPATH so modules in subdirectories can be imported by tests
+        paths = []
+        if self._workspace_path:
+            p_ws = Path(self._workspace_path)
+            if p_ws.exists():
+                paths.append(str(p_ws))
+                for sub in p_ws.iterdir():
+                    if sub.is_dir() and not sub.name.startswith((".", "_", "venv", "node_modules", ".git")):
+                        paths.append(str(sub))
+        current_pythonpath = clean_env.get("PYTHONPATH", "")
+        if current_pythonpath:
+            paths.append(current_pythonpath)
+        if paths:
+            clean_env["PYTHONPATH"] = os.pathsep.join(paths)
+
         if custom_env:
             for k, v in custom_env.items():
                 if not any(sens in k.upper() for sens in SENSITIVE_ENV_KEYS):
@@ -82,6 +97,17 @@ class ProcessSandbox(BaseSandbox):
             target.relative_to(root)
         except ValueError:
             raise ValueError(f"Path traversal attempted: '{relative_path}' is outside sandbox workspace.")
+
+        # If the exact path does not exist, search subdirectories for matching file/path
+        if not target.exists() and relative_path:
+            norm_rel = relative_path.replace("\\", "/")
+            for p in root.rglob("*"):
+                parts = p.parts
+                if not any(part in parts for part in [".git", "__pycache__", ".pytest_cache", ".venv", "venv", "node_modules"]):
+                    p_rel = str(p.relative_to(root)).replace("\\", "/")
+                    if p_rel.endswith(norm_rel):
+                        return p
+
         return target
 
     async def execute_command(
@@ -141,8 +167,10 @@ class ProcessSandbox(BaseSandbox):
                     pass
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             exit_code = -1
-            stderr_text = f"[Sandbox Execution Error]: {str(e)}"
+            stderr_text = f"[Sandbox Execution Error]: {str(e)} ({type(e).__name__})"
 
         duration = time.time() - start_time
         return CommandResult(

@@ -8,11 +8,11 @@ interface TerminalPanelProps {
 export const TerminalPanel: React.FC<TerminalPanelProps> = ({ logs }) => {
   const [autoScroll, setAutoScroll] = useState(true);
   const [copied, setCopied] = useState(false);
-  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const terminalWrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (autoScroll) {
-      terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (autoScroll && terminalWrapperRef.current && logs.length > 0) {
+      terminalWrapperRef.current.scrollTop = terminalWrapperRef.current.scrollHeight;
     }
   }, [logs, autoScroll]);
 
@@ -115,7 +115,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ logs }) => {
         </div>
 
         {/* Terminal Content Stream */}
-        <div className="terminal-wrapper" style={{ border: "none", borderRadius: 0 }}>
+        <div ref={terminalWrapperRef} className="terminal-wrapper" style={{ border: "none", borderRadius: 0 }}>
           {logs.length === 0 ? (
             <div
               style={{
@@ -242,7 +242,6 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ logs }) => {
               );
             })
           )}
-          <div ref={terminalEndRef} />
         </div>
       </div>
     </div>

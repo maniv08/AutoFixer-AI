@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Play, Sparkles, Settings, Globe, Check, FolderGit2, LogOut, RotateCw } from "lucide-react";
 import { getServerUrl, setServerUrl } from "../config";
 import { useAuth } from "../context/AuthContext";
@@ -35,6 +35,58 @@ export const Header: React.FC<HeaderProps> = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState(getServerUrl());
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const settingsDropdownRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+
+      // Close Settings if open and clicked/touched outside
+      if (
+        showSettings &&
+        settingsDropdownRef.current &&
+        !settingsDropdownRef.current.contains(target) &&
+        settingsButtonRef.current &&
+        !settingsButtonRef.current.contains(target)
+      ) {
+        setShowSettings(false);
+      }
+
+      // Close Profile Menu if open and clicked/touched outside
+      if (
+        showProfileMenu &&
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(target) &&
+        profileButtonRef.current &&
+        !profileButtonRef.current.contains(target)
+      ) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowSettings(false);
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showSettings || showProfileMenu) {
+      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener("touchstart", handleOutsideClick);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showSettings, showProfileMenu]);
 
   const handleSaveServer = () => {
     setServerUrl(serverUrlInput);
@@ -297,6 +349,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Server Config Settings Button */}
         <button
+          ref={settingsButtonRef}
           className="btn-secondary"
           onClick={() => {
             setShowSettings(!showSettings);
@@ -318,6 +371,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* User Profile Avatar & Menu Button */}
         {user && (
           <button
+            ref={profileButtonRef}
             className="btn-secondary"
             onClick={() => {
               setShowProfileMenu(!showProfileMenu);
@@ -363,6 +417,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* User Profile Dropdown */}
       {showProfileMenu && user && (
         <div
+          ref={profileDropdownRef}
           style={{
             position: "absolute",
             top: "65px",
@@ -452,6 +507,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Settings Modal Dropdown */}
       {showSettings && (
         <div
+          ref={settingsDropdownRef}
           style={{
             position: "absolute",
             top: "65px",

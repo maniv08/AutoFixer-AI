@@ -117,34 +117,74 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
   // Listen to Firebase Auth state or load local storage
   useEffect(() => {
-    if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-        if (fbUser) {
-          // Check if we already have a token stored in localStorage for this user
-          let existingToken: string | undefined;
-          let existingUsername: string | undefined;
-          try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-              const parsed = JSON.parse(stored);
-              if (parsed.id === fbUser.uid) {
-                existingToken = parsed.githubAccessToken;
-                existingUsername = parsed.username;
-              }
-            }
-          } catch {}
+    let isMounted = true;
 
-          const appUser = mapFirebaseUser(fbUser, undefined, existingToken, existingUsername);
-          setUser(appUser);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(appUser));
-        } else {
-          setUser(null);
-          localStorage.removeItem(STORAGE_KEY);
-        }
+    // Safety timeout: Never keep the user on the initial splash screen for more than 1 second
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
         setIsLoading(false);
-      });
+      }
+    }, 1000);
 
-      return () => unsubscribe();
+    if (isFirebaseConfigured && auth) {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        (fbUser) => {
+          if (!isMounted) return;
+          clearTimeout(safetyTimer);
+          if (fbUser) {
+            // Check if we already have a token stored in localStorage for this user
+            let existingToken: string | undefined;
+            let existingUsername: string | undefined;
+            try {
+              const stored = localStorage.getItem(STORAGE_KEY);
+              if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed.id === fbUser.uid) {
+                  existingToken = parsed.githubAccessToken;
+                  existingUsername = parsed.username;
+                }
+              }
+            } catch {}
+
+            const appUser = mapFirebaseUser(fbUser, undefined, existingToken, existingUsername);
+            setUser(appUser);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appUser));
+          } else {
+            // If Firebase says no user, check local storage for demo / dev credentials
+            try {
+              const stored = localStorage.getItem(STORAGE_KEY);
+              if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed && (parsed.provider === "demo" || parsed.provider === "credentials")) {
+                  setUser(parsed);
+                } else {
+                  setUser(null);
+                  localStorage.removeItem(STORAGE_KEY);
+                }
+              } else {
+                setUser(null);
+              }
+            } catch {
+              setUser(null);
+            }
+          }
+          setIsLoading(false);
+        },
+        (error) => {
+          console.warn("Firebase onAuthStateChanged error:", error);
+          if (isMounted) {
+            clearTimeout(safetyTimer);
+            setIsLoading(false);
+          }
+        }
+      );
+
+      return () => {
+        isMounted = false;
+        clearTimeout(safetyTimer);
+        unsubscribe();
+      };
     } else {
       // Fallback local storage session when Firebase config is pending
       try {
@@ -158,6 +198,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       } catch (e) {
         console.error("Failed to load local auth session:", e);
       } finally {
+        clearTimeout(safetyTimer);
         setIsLoading(false);
       }
     }
@@ -165,19 +206,49 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
   // Real GitHub OAuth Sign In
   const signInWithGithub = async (): Promise<void> => {
-    setIsLoading(true);
     try {
       if (isFirebaseConfigured && auth && githubProvider) {
-        const result = await signInWithPopup(auth, githubProvider);
-        const credential = GithubAuthProvider.credentialFromResult(result);
-        const token = credential?.accessToken;
-        const screenName = (result as any)._tokenResponse?.screenName;
+        try {
+          const result = await signInWithPopup(auth, githubProvider);
+          const credential = GithubAuthProvider.credentialFromResult(result);
+          const token = credential?.accessToken;
+          const screenName = (result as any)._tokenResponse?.screenName;
 
-        const appUser = mapFirebaseUser(result.user, "github", token, screenName);
-        saveUserSession(appUser);
+          const appUser = mapFirebaseUser(result.user, "github", token, screenName);
+          saveUserSession(appUser);
+        } catch (firebaseErr: any) {
+          // User closed popup or cancelled: do nothing gracefully
+          if (
+            firebaseErr.code === "auth/popup-closed-by-user" ||
+            firebaseErr.code === "auth/cancelled-popup-request"
+          ) {
+            return;
+          }
+          // If domain unauthorized or invalid keys, fall back to simulated session
+          if (
+            firebaseErr.code === "auth/unauthorized-domain" ||
+            firebaseErr.code === "auth/invalid-api-key" ||
+            firebaseErr.code === "auth/api-key-not-valid"
+          ) {
+            console.warn("Firebase auth domain/key error, using local GitHub session:", firebaseErr.message);
+            const simulatedUser: User = {
+              id: "gh_" + Math.random().toString(36).substring(2, 9),
+              name: "GitHub Developer",
+              username: "maniv08",
+              email: "vmanikandan9165@gmail.com",
+              avatarUrl: "https://avatars.githubusercontent.com/u/9919?v=4",
+              provider: "github",
+              role: "developer",
+              createdAt: new Date().toISOString()
+            };
+            saveUserSession(simulatedUser);
+            return;
+          }
+          throw firebaseErr;
+        }
       } else {
         // Fallback simulation if Firebase keys not provided yet in .env
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 400));
         const simulatedUser: User = {
           id: "gh_" + Math.random().toString(36).substring(2, 9),
           name: "GitHub Developer",
@@ -191,24 +262,58 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         saveUserSession(simulatedUser);
       }
     } catch (error: any) {
+      if (
+        error.code === "auth/popup-closed-by-user" ||
+        error.code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
       console.error("GitHub Auth Error:", error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // Real Google OAuth Sign In
   const signInWithGoogle = async (): Promise<void> => {
-    setIsLoading(true);
     try {
       if (isFirebaseConfigured && auth && googleProvider) {
-        const result = await signInWithPopup(auth, googleProvider);
-        const appUser = mapFirebaseUser(result.user, "google");
-        saveUserSession(appUser);
+        try {
+          const result = await signInWithPopup(auth, googleProvider);
+          const appUser = mapFirebaseUser(result.user, "google");
+          saveUserSession(appUser);
+        } catch (firebaseErr: any) {
+          // User closed popup or cancelled: do nothing gracefully
+          if (
+            firebaseErr.code === "auth/popup-closed-by-user" ||
+            firebaseErr.code === "auth/cancelled-popup-request"
+          ) {
+            return;
+          }
+          // If domain unauthorized or invalid keys, fall back to simulated session
+          if (
+            firebaseErr.code === "auth/unauthorized-domain" ||
+            firebaseErr.code === "auth/invalid-api-key" ||
+            firebaseErr.code === "auth/api-key-not-valid"
+          ) {
+            console.warn("Firebase auth domain/key error, using local Google session:", firebaseErr.message);
+            const simulatedUser: User = {
+              id: "goog_" + Math.random().toString(36).substring(2, 9),
+              name: "Google Developer",
+              username: "google_dev",
+              email: "engineer@gmail.com",
+              avatarUrl: "https://lh3.googleusercontent.com/a/default-user",
+              provider: "google",
+              role: "developer",
+              createdAt: new Date().toISOString()
+            };
+            saveUserSession(simulatedUser);
+            return;
+          }
+          throw firebaseErr;
+        }
       } else {
         // Fallback simulation if Firebase keys not provided yet in .env
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 400));
         const simulatedUser: User = {
           id: "goog_" + Math.random().toString(36).substring(2, 9),
           name: "Google Developer",
@@ -222,10 +327,14 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         saveUserSession(simulatedUser);
       }
     } catch (error: any) {
+      if (
+        error.code === "auth/popup-closed-by-user" ||
+        error.code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
       console.error("Google Auth Error:", error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -236,15 +345,11 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     name?: string,
     isRegister?: boolean
   ): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true);
-
     if (!usernameOrEmail || !usernameOrEmail.trim()) {
-      setIsLoading(false);
       return { success: false, error: "Please enter your username or email address." };
     }
 
     if (!password || password.length < 6) {
-      setIsLoading(false);
       return { success: false, error: "Password must be at least 6 characters." };
     }
 
@@ -293,14 +398,11 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         errorMsg = error.message;
       }
       return { success: false, error: errorMsg };
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signInAsDemo = async (role: "judge" | "developer" = "judge"): Promise<void> => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     const demoUser: User = {
       id: "demo_judge",
@@ -313,7 +415,6 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     };
 
     saveUserSession(demoUser);
-    setIsLoading(false);
   };
 
   const signOut = async () => {

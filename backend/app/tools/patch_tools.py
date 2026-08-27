@@ -38,23 +38,28 @@ async def apply_patch(
         
         # Normalize newlines
         clean_orig_content = original_content.replace("\r\n", "\n")
-        clean_orig_snippet = original_snippet.replace("\r\n", "\n").strip()
-        clean_repl_snippet = replacement_snippet.replace("\r\n", "\n").strip()
+        clean_orig_snippet = original_snippet.replace("\r\n", "\n")
+        clean_repl_snippet = replacement_snippet.replace("\r\n", "\n")
 
-        if clean_orig_snippet not in clean_orig_content:
-            # Try fuzzy/whitespace-stripped search if exact fails
-            orig_lines = [l.strip() for l in clean_orig_snippet.splitlines()]
+        if clean_orig_snippet in clean_orig_content:
+            new_content = clean_orig_content.replace(clean_orig_snippet, clean_repl_snippet, 1)
+        elif clean_orig_snippet.strip() in clean_orig_content:
+            new_content = clean_orig_content.replace(clean_orig_snippet.strip(), clean_repl_snippet.strip(), 1)
+        else:
+            # Fuzzy line-by-line matching while preserving indentation
+            orig_lines = [l.strip() for l in clean_orig_snippet.splitlines() if l.strip()]
             file_lines = clean_orig_content.splitlines()
             
-            # Check if snippet exists with whitespace variations
             matched = False
             for i in range(len(file_lines) - len(orig_lines) + 1):
-                slice_lines = [l.strip() for l in file_lines[i:i + len(orig_lines)]]
+                slice_lines = [l.strip() for l in file_lines[i:i + len(orig_lines)] if l.strip()]
                 if slice_lines == orig_lines:
-                    # Found location
-                    start_pos = sum(len(l) + 1 for l in file_lines[:i])
-                    end_pos = sum(len(l) + 1 for l in file_lines[:i + len(orig_lines)])
-                    new_content = clean_orig_content[:start_pos] + clean_repl_snippet + "\n" + clean_orig_content[end_pos:]
+                    leading_indent = len(file_lines[i]) - len(file_lines[i].lstrip())
+                    indent_str = " " * leading_indent
+                    
+                    repl_lines = [(indent_str + l.lstrip() if l.strip() else "") for l in clean_repl_snippet.splitlines()]
+                    new_file_lines = file_lines[:i] + repl_lines + file_lines[i + len(orig_lines):]
+                    new_content = "\n".join(new_file_lines)
                     matched = True
                     break
             
@@ -65,8 +70,6 @@ async def apply_patch(
                     "target": target_file,
                     "reason": reason
                 }
-        else:
-            new_content = clean_orig_content.replace(clean_orig_snippet, clean_repl_snippet, 1)
 
         # Pre-validate Python syntax if Python file
         if target_file.endswith(".py"):

@@ -13,6 +13,16 @@ export const FinalReportModal: React.FC<FinalReportModalProps> = ({ report, onCl
   const isSuccess = report.status === "SUCCESS" || report.status === "COMPLETED";
   const isHuman = report.status === "HUMAN_INTERVENTION";
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const downloadMarkdown = () => {
     const blob = new Blob([report.markdown_report], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -35,6 +45,11 @@ export const FinalReportModal: React.FC<FinalReportModalProps> = ({ report, onCl
 
   return (
     <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
       style={{
         position: "fixed",
         top: 0,

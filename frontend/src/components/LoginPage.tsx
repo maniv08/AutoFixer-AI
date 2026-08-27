@@ -11,11 +11,12 @@ import {
   EyeOff,
   Terminal,
   AlertCircle,
-  FolderGit2
+  FolderGit2,
+  Sparkles
 } from "lucide-react";
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGithub, signInWithGoogle, signInWithCredentials } = useAuth();
+  const { signInWithGithub, signInWithGoogle, signInWithCredentials, signInAsDemo } = useAuth();
 
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
@@ -30,17 +31,22 @@ export const LoginPage: React.FC = () => {
     setErrorMsg(null);
     setLoadingType("credentials");
 
-    const result = await signInWithCredentials(
-      usernameOrEmail,
-      password,
-      fullName,
-      mode === "register"
-    );
+    try {
+      const result = await signInWithCredentials(
+        usernameOrEmail,
+        password,
+        fullName,
+        mode === "register"
+      );
 
-    if (!result.success && result.error) {
-      setErrorMsg(result.error);
+      if (!result.success && result.error) {
+        setErrorMsg(result.error);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Authentication error.");
+    } finally {
+      setLoadingType(null);
     }
-    setLoadingType(null);
   };
 
   const handleGithubLogin = async () => {
@@ -49,7 +55,11 @@ export const LoginPage: React.FC = () => {
     try {
       await signInWithGithub();
     } catch (err: any) {
-      if (err.code !== "auth/popup-closed-by-user") {
+      if (
+        err.code !== "auth/popup-closed-by-user" &&
+        err.code !== "auth/cancelled-popup-request" &&
+        !err.message?.includes("closed-by-user")
+      ) {
         setErrorMsg(err.message || "GitHub sign-in failed. Please try again.");
       }
     } finally {
@@ -63,9 +73,23 @@ export const LoginPage: React.FC = () => {
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      if (err.code !== "auth/popup-closed-by-user") {
+      if (
+        err.code !== "auth/popup-closed-by-user" &&
+        err.code !== "auth/cancelled-popup-request" &&
+        !err.message?.includes("closed-by-user")
+      ) {
         setErrorMsg(err.message || "Google sign-in failed. Please try again.");
       }
+    } finally {
+      setLoadingType(null);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setErrorMsg(null);
+    setLoadingType("demo");
+    try {
+      await signInAsDemo("judge");
     } finally {
       setLoadingType(null);
     }
@@ -487,6 +511,44 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Quick Demo / Judge Access */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "2px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ flex: 1, height: "1px", background: "var(--border-color)" }} />
+              <span style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                or 1-click evaluation
+              </span>
+              <div style={{ flex: 1, height: "1px", background: "var(--border-color)" }} />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={loadingType !== null}
+              style={{
+                width: "100%",
+                background: "rgba(168, 85, 247, 0.12)",
+                border: "1px solid rgba(168, 85, 247, 0.4)",
+                color: "#d8b4fe",
+                padding: "10px 14px",
+                borderRadius: "var(--radius-md)",
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "all 0.15s ease"
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(168, 85, 247, 0.22)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(168, 85, 247, 0.12)")}
+            >
+              <Sparkles size={15} color="#c084fc" />
+              <span>{loadingType === "demo" ? "Launching Demo Mode..." : "1-Click Instant Demo / Judge Mode"}</span>
+            </button>
+          </div>
 
           {/* Footer note */}
           <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)" }}>
