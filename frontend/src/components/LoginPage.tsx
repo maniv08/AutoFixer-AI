@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
-  Sparkles,
   Lock,
   Mail,
   User as UserIcon,
@@ -9,7 +8,6 @@ import {
   ShieldCheck,
   Cpu,
   Brain,
-  Zap,
   Eye,
   EyeOff,
   Terminal,
@@ -18,7 +16,7 @@ import {
 } from "lucide-react";
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGithub, signInWithGoogle, signInWithCredentials, signInAsDemo } = useAuth();
+  const { signInWithGithub, signInWithGoogle, signInWithCredentials } = useAuth();
 
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
@@ -66,15 +64,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = async (role: "judge" | "developer") => {
-    setErrorMsg(null);
-    setLoadingType(role);
-    try {
-      await signInAsDemo(role);
-    } finally {
-      setLoadingType(null);
-    }
-  };
 
   return (
     <div
@@ -155,57 +144,6 @@ export const LoginPage: React.FC = () => {
             <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
               Autonomous multi-step diagnostic loop powered by AST validation, process-level sandbox security, and traceback-guided surgical diffs.
             </p>
-          </div>
-
-          {/* Quick Judge Access Banner */}
-          <div
-            style={{
-              background: "linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(6, 182, 212, 0.12))",
-              border: "1px solid rgba(245, 158, 11, 0.35)",
-              borderRadius: "var(--radius-lg)",
-              padding: "16px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)"
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Zap size={18} color="#f59e0b" />
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Hackathon Judge / Evaluator Mode
-              </span>
-            </div>
-            <p style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              Evaluating this project? Skip typing credentials and jump straight into the full autonomous developer dashboard with 1 click.
-            </p>
-            <button
-              onClick={() => handleDemoLogin("judge")}
-              disabled={loadingType !== null}
-              style={{
-                background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                border: "none",
-                color: "#ffffff",
-                padding: "10px 16px",
-                borderRadius: "var(--radius-md)",
-                fontSize: "13px",
-                fontWeight: 700,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                boxShadow: "0 0 16px rgba(245, 158, 11, 0.4)",
-                transition: "all 0.15s ease"
-              }}
-            >
-              {loadingType === "judge" ? "Entering Dashboard..." : (
-                <>
-                  <Sparkles size={16} />
-                  ⚡ 1-Click Judge Access (Instant Evaluation)
-                </>
-              )}
-            </button>
           </div>
 
           {/* Feature Highlights Grid */}
