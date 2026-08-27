@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Play, Sparkles, Cpu, Settings, Globe, Check, FolderGit2, LogOut } from "lucide-react";
+import { Play, Sparkles, Settings, Globe, Check, FolderGit2, LogOut } from "lucide-react";
 import { getServerUrl, setServerUrl } from "../config";
 import { useAuth } from "../context/AuthContext";
 
@@ -50,21 +50,23 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="header-panel">
       {/* Brand & Subtitle Group */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-        <div
+        <img
+          src="/logo.png"
+          alt="AutoFixer AI Logo"
           style={{
-            background: "linear-gradient(135deg, #0284c7, #06b6d4)",
             width: "38px",
             height: "38px",
             borderRadius: "var(--radius-md)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 0 12px rgba(6, 182, 212, 0.4)",
-            flexShrink: 0
+            objectFit: "cover",
+            boxShadow: "0 0 14px rgba(6, 182, 212, 0.45)",
+            flexShrink: 0,
+            border: "1px solid rgba(56, 189, 248, 0.3)"
           }}
-        >
-          <Cpu size={22} color="#ffffff" />
-        </div>
+          onError={(e) => {
+            // fallback to stylized icon if image fails
+            e.currentTarget.style.display = "none";
+          }}
+        />
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <h1 style={{ fontSize: "1.15rem", fontWeight: "700", letterSpacing: "-0.02em", lineHeight: "1.2" }}>
             AutoFixer <span style={{ color: "var(--accent-cyan)" }}>AI</span>

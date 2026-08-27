@@ -1,7 +1,9 @@
-# AutoFixer AI 🛠️⚡
-
-> **Autonomous Software QA & Surgical Refactoring Agent** — Built for Hackathon Track B.  
-> *"Give it a broken repository. It finds, fixes, tests, and verifies the solution."*
+<div align="center">
+  <img src="docs/logo.png" alt="AutoFixer AI Logo" width="160" style="border-radius: 16px; margin-bottom: 12px; box-shadow: 0 0 24px rgba(6, 182, 212, 0.4);" />
+  <h1>AutoFixer AI 🛠️⚡</h1>
+  <p><strong>Autonomous Software QA & Surgical Refactoring Agent</strong></p>
+  <p><em>"Give it a broken repository. It finds, fixes, tests, and verifies the solution."</em></p>
+</div>
 
 AutoFixer AI takes a repository with failing tests, discovers structure, executes tests in an isolated sandbox, diagnoses root causes, generates surgical git diffs, reflects on partial failures, and self-corrects until all tests pass with 98–99% precision.
 

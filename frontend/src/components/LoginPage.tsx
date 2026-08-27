@@ -6,7 +6,6 @@ import {
   User as UserIcon,
   ArrowRight,
   ShieldCheck,
-  Cpu,
   Brain,
   Eye,
   EyeOff,
@@ -118,21 +117,22 @@ export const LoginPage: React.FC = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: "24px", padding: "12px" }}>
           {/* Logo & Headline */}
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-              <div
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+              <img
+                src="/logo.png"
+                alt="AutoFixer AI Logo"
                 style={{
-                  background: "linear-gradient(135deg, #0284c7, #06b6d4)",
-                  width: "44px",
-                  height: "44px",
+                  width: "50px",
+                  height: "50px",
                   borderRadius: "var(--radius-md)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 0 16px rgba(6, 182, 212, 0.45)"
+                  objectFit: "cover",
+                  boxShadow: "0 0 20px rgba(6, 182, 212, 0.5)",
+                  border: "1px solid rgba(56, 189, 248, 0.4)"
                 }}
-              >
-                <Cpu size={26} color="#ffffff" />
-              </div>
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
               <div>
                 <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#ffffff", letterSpacing: "-0.5px" }}>
                   AutoFixer <span style={{ color: "var(--accent-cyan)" }}>AI</span>
